@@ -66,8 +66,10 @@ possibleVals b pos = [1..boardSize] \\ concat [ext b pos | ext <- [rowVals, colV
 idxToPos :: Int -> Pos
 idxToPos i = Pos (i `div` boardSize) (i `mod` boardSize)
 
-allPossibleVals :: Board -> [(Pos, Maybe [Int])]
-allPossibleVals b = [(pos, (possVals b pos)) | pos <- positions]
+allPossibleVals :: Board -> [(Pos, [Int])]
+allPossibleVals b = [(pos, fromJust pv) | pos <- positions
+                               , let pv = possVals b pos
+                               , isJust pv]
   where positions = [Pos r c | r <- take boardSize [0..], c <- take boardSize [0..]]
         possVals :: Board -> Pos -> Maybe [Int]
         possVals b pos = case (field b pos) of
