@@ -66,15 +66,21 @@ possibleVals b pos = [1..boardSize] \\ concat [ext b pos | ext <- [rowVals, colV
 idxToPos :: Int -> Pos
 idxToPos i = Pos (i `div` boardSize) (i `mod` boardSize)
 
+seqSnd :: (a, Maybe b) -> Maybe (a, b)
+seqSnd (a, Nothing) = Nothing
+seqSnd (a, Just b) = Just (a, b)
+
 allPossibleVals :: Board -> [(Pos, [Int])]
-allPossibleVals b = [(pos, fromJust pv) | pos <- positions
-                               , let pv = possVals b pos
-                               , isJust pv]
+allPossibleVals b = catMaybes [seqSnd (pos, possVals b pos) | pos <- positions]
   where positions = [Pos r c | r <- take boardSize [0..], c <- take boardSize [0..]]
         possVals :: Board -> Pos -> Maybe [Int]
         possVals b pos = case (field b pos) of
                            Just _ -> Nothing
                            Nothing -> Just $ possibleVals b pos
+
+bestPossibleVals :: Board -> Maybe (Pos, [Int])
+bestPossibleVals b = listToMaybe $ sortByLength (allPossibleVals b)
+  where sortByLength = sortBy (\ (_, avs) (_, bvs) -> compare (length avs) (length bvs))
 
 -- free :: Board -> [Pos]
 
