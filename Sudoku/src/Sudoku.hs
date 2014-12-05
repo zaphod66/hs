@@ -15,6 +15,7 @@ squareSize = 3
 
 type Field = Maybe Int
 
+-- TODO convert to Data.Sequence
 type Board = [Field]
 
 data Pos = Pos Int Int deriving Show
@@ -29,8 +30,14 @@ posGen =
 instance Arbitrary Pos where
   arbitrary = posGen
 
+idxToPos :: Int -> Pos
+idxToPos i = Pos (i `div` boardSize) (i `mod` boardSize)
+
+posToIdx :: Pos -> Int
+posToIdx (Pos r c) = r * boardSize + c
+
 field :: Board -> Pos -> Field
-field b (Pos r c) = b !! ((r * boardSize) + c)
+field b p = b !! (posToIdx p)
 
 prop_field pos @ (Pos r c) =
   field board pos == (Just $ r * boardSize + c)
@@ -63,9 +70,6 @@ squareVals b (Pos r c) =
 possibleVals :: Board -> Pos -> [Int]
 possibleVals b pos = [1..boardSize] \\ concat [ext b pos | ext <- [rowVals, colVals, squareVals]]
 
-idxToPos :: Int -> Pos
-idxToPos i = Pos (i `div` boardSize) (i `mod` boardSize)
-
 seqSnd :: (a, Maybe b) -> Maybe (a, b)
 seqSnd (a, Nothing) = Nothing
 seqSnd (a, Just b) = Just (a, b)
@@ -82,6 +86,7 @@ bestPossibleVals :: Board -> Maybe (Pos, [Int])
 bestPossibleVals b = listToMaybe $ sortByLength (allPossibleVals b)
   where sortByLength = sortBy (\ (_, avs) (_, bvs) -> compare (length avs) (length bvs))
 
--- free :: Board -> [Pos]
+update :: Board -> Pos -> Int -> Board
+update b p v = (take i b) ++ [Just v] ++ (drop (i + 1) b)
+  where i = posToIdx p
 
--- update :: Board -> Pos -> Int -> Board
