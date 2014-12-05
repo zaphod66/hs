@@ -67,6 +67,8 @@ squareVals b (Pos r c) =
 
 -- TODO test squareVals
 
+-- TODO capture overspecified fields (possible vals empty)
+
 possibleVals :: Board -> Pos -> [Int]
 possibleVals b pos = [1..boardSize] \\ concat [ext b pos | ext <- [rowVals, colVals, squareVals]]
 
@@ -89,4 +91,12 @@ bestPossibleVals b = listToMaybe $ sortByLength (allPossibleVals b)
 update :: Board -> Pos -> Int -> Board
 update b p v = (take i b) ++ [Just v] ++ (drop (i + 1) b)
   where i = posToIdx p
+
+solve :: Board -> Maybe Board
+solve b = step possVals
+  where possVals = bestPossibleVals b
+        step Nothing = Just b
+        step (Just (p, [])) = Nothing
+        step (Just (p, vs)) = undefined
+
 
