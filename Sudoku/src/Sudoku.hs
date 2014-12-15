@@ -95,8 +95,9 @@ update b p v = (take i b) ++ [Just v] ++ (drop (i + 1) b)
 solve :: Board -> Maybe Board
 solve b = step possVals
   where possVals = bestPossibleVals b
+        step :: Maybe (Pos, [Int]) -> Maybe Board
         step Nothing = Just b
         step (Just (p, [])) = Nothing
-        step (Just (p, vs)) = undefined
+        step (Just (p, vs)) = listToMaybe $ catMaybes [solve (update b p v) | v <- vs]
 
 
