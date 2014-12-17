@@ -7,6 +7,7 @@ import Test.QuickCheck.All
 import Test.QuickCheck.Gen
 import Data.Maybe
 import Data.List
+import Data.List.Split
 
 runTests = $quickCheckAll
 
@@ -16,7 +17,15 @@ squareSize = 3
 type Field = Maybe Int
 
 -- TODO convert to Data.Sequence
-type Board = [Field]
+newtype Board = Board [Field]
+
+instance Show Board where
+  show (Board b) = intercalate "\n" rows
+    where
+      rows :: [String]
+      rows = map show (chunksOf boardSize (map render b))
+      render Nothing = "-"
+      render (Just i) = show i
 
 data Pos = Pos Int Int deriving Show
 
@@ -37,31 +46,31 @@ posToIdx :: Pos -> Int
 posToIdx (Pos r c) = r * boardSize + c
 
 field :: Board -> Pos -> Field
-field b p = b !! (posToIdx p)
+field (Board b) p = b !! (posToIdx p)
 
 prop_field pos @ (Pos r c) =
-  field board pos == (Just $ r * boardSize + c)
+  field (Board board) pos == (Just $ r * boardSize + c)
   where board = map (\i -> Just i) (take (boardSize ^ 2) [0..])
 
 rowVals :: Board -> Pos -> [Int]
-rowVals b (Pos r c) = catMaybes [field b (Pos r c') | c' <- take boardSize [0..]]
+rowVals (Board b) (Pos r c) = catMaybes [field (Board b) (Pos r c') | c' <- take boardSize [0..]]
 
 prop_rowVals pos @ (Pos r _) =
   sort rv == take boardSize [(r * boardSize)..]
   where board = map (\i -> Just i) (take (boardSize ^ 2) [0..])
-        rv = rowVals board pos
+        rv = rowVals (Board board) pos
 
 colVals :: Board -> Pos -> [Int]
-colVals b (Pos r c) = catMaybes [field b (Pos r' c) | r' <- take boardSize [0..]]
+colVals (Board b) (Pos r c) = catMaybes [field (Board b) (Pos r' c) | r' <- take boardSize [0..]]
 
 prop_colVals pos @ (Pos _ c) =
   sort cv == [v * boardSize + c | v <- take boardSize [0..]]
   where board = map (\i -> Just i) (take (boardSize ^ 2) [0..])
-        cv = colVals board pos
+        cv = colVals (Board board) pos
 
 squareVals :: Board -> Pos -> [Int]
-squareVals b (Pos r c) =
-  catMaybes [field b (Pos r' c') | r' <- take squareSize [(off r)..]
+squareVals (Board b) (Pos r c) =
+  catMaybes [field (Board b) (Pos r' c') | r' <- take squareSize [(off r)..]
                                  , c' <- take squareSize [(off c)..]]
   where off x = x `div` squareSize * squareSize
 
@@ -70,33 +79,34 @@ squareVals b (Pos r c) =
 -- TODO capture overspecified fields (possible vals empty)
 
 possibleVals :: Board -> Pos -> [Int]
-possibleVals b pos = [1..boardSize] \\ concat [ext b pos | ext <- [rowVals, colVals, squareVals]]
+possibleVals (Board b) pos = [1..boardSize] \\ concat [ext (Board b) pos | ext <- [rowVals, colVals, squareVals]]
 
 seqSnd :: (a, Maybe b) -> Maybe (a, b)
 seqSnd (a, Nothing) = Nothing
 seqSnd (a, Just b) = Just (a, b)
 
 allPossibleVals :: Board -> [(Pos, [Int])]
-allPossibleVals b = catMaybes [seqSnd (pos, possVals b pos) | pos <- positions]
+allPossibleVals (Board b) = catMaybes [seqSnd (pos, possVals (Board b) pos) | pos <- positions]
   where positions = [Pos r c | r <- take boardSize [0..], c <- take boardSize [0..]]
         possVals :: Board -> Pos -> Maybe [Int]
-        possVals b pos = case (field b pos) of
+        possVals (Board b) pos = case (field (Board b) pos) of
                            Just _ -> Nothing
-                           Nothing -> Just $ possibleVals b pos
+                           Nothing -> Just $ possibleVals (Board b) pos
 
 bestPossibleVals :: Board -> Maybe (Pos, [Int])
-bestPossibleVals b = listToMaybe $ sortByLength (allPossibleVals b)
+bestPossibleVals (Board b) = listToMaybe $ sortByLength (allPossibleVals (Board b))
   where sortByLength = sortBy (\ (_, avs) (_, bvs) -> compare (length avs) (length bvs))
 
 update :: Board -> Pos -> Int -> Board
-update b p v = (take i b) ++ [Just v] ++ (drop (i + 1) b)
+update (Board b) p v = Board $ (take i b) ++ [Just v] ++ (drop (i + 1) b)
   where i = posToIdx p
 
 solve :: Board -> Maybe Board
-solve b = step possVals
-  where possVals = bestPossibleVals b
-        step Nothing = Just b
+solve (Board b) = step possVals
+  where possVals = bestPossibleVals (Board b)
+        step :: Maybe (Pos, [Int]) -> Maybe Board
+        step Nothing = Just $ Board b
         step (Just (p, [])) = Nothing
-        step (Just (p, vs)) = undefined
+        step (Just (p, vs)) = listToMaybe $ catMaybes [solve (update (Board b) p v) | v <- vs]
 
 

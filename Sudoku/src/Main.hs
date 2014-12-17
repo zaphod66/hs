@@ -23,7 +23,7 @@ import System.Exit (exitFailure)
 import Test.QuickCheck.All (quickCheckAll)
 import Sudoku
 
-board = map convert template
+board = Board $ map convert template
   where
     convert :: Int -> Field
     convert 0 = Nothing
