@@ -102,7 +102,9 @@ zero1 =
     ]
 
 exeMain = do
-    putStrLn (show board)
+    putStrLn (show board1)
+    putStrLn ("==========")
+    putStrLn (show $ solve board1)
 
 testMain = do
     allPass <- runTests
