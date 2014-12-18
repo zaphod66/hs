@@ -21,22 +21,31 @@ import Control.Monad (unless)
 import Data.List (stripPrefix)
 import System.Exit (exitFailure)
 import Test.QuickCheck.All (quickCheckAll)
+import Data.Char
+
 import Sudoku
 
-board1 = intsToBoard norm1
-board2 = intsToBoard grid1
-board3 = intsToBoard grid2
-board4 = intsToBoard hard1
-board5 = intsToBoard zero1
+board = intsToBoard grid0
+
+toBoard :: (a -> Field) -> [a] -> Board
+toBoard f cs = Board $ map f cs
 
 intsToBoard :: [Int] -> Board
-intsToBoard b = Board $ map convert b
+intsToBoard  b = toBoard f b
   where
-    convert :: Int -> Field
-    convert 0 = Nothing
-    convert d = Just d
+    f :: Int -> Field
+    f 0 = Nothing
+    f d = Just d
 
-norm1 =
+charsToBoard :: [Char] -> Board
+charsToBoard b = toBoard f b
+  where
+    f :: Char -> Field
+    f '.' = Nothing
+    f '0' = Nothing
+    f  c  = Just ((ord c) - (ord '0'))
+
+grid0 =
     [
         0,0,7,0,2,1,0,6,0,
         0,8,0,0,0,0,0,0,0,
@@ -49,62 +58,19 @@ norm1 =
         0,0,3,0,6,2,0,9,0
     ]
 
-grid1 =
-    [
-        0,0,3,0,2,0,6,0,0,
-        9,0,0,3,0,5,0,0,1,
-        0,0,1,8,0,6,4,0,0,
-        0,0,8,1,0,2,9,0,0,
-        7,0,0,0,0,0,0,0,8,
-        0,0,6,7,0,8,2,0,0,
-        0,0,2,6,0,9,5,0,0,
-        8,0,0,2,0,3,0,0,9,
-        0,0,5,0,1,0,3,0,0
-    ]
-
-grid2 =
-    [
-        4,0,0,0,0,0,8,0,5,
-        0,3,0,0,0,0,0,0,0,
-        0,0,0,7,0,0,0,0,0,
-        0,2,0,0,0,0,0,6,0,
-        0,0,0,0,8,0,4,0,0,
-        0,0,0,0,1,0,0,0,0,
-        0,0,0,6,0,3,0,7,0,
-        5,0,0,2,0,0,0,0,0,
-        1,0,4,0,0,0,0,0,0
-    ]
-
-hard1 =
-    [
-        0,0,0,0,0,6,0,0,0,
-        0,5,9,0,0,0,0,0,8,
-        2,0,0,0,0,8,0,0,0,
-        0,4,5,0,0,0,0,0,0,
-        0,0,3,0,0,0,0,0,0,
-        0,0,6,0,0,3,0,5,4,
-        0,0,0,3,2,5,0,0,6,
-        0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0
-    ]
-
-zero1 =
-    [
-        0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0
-    ]
+zeros   = "................................................................................."
+grid1   = "003020600900305001001806400008102900700000008006708200002609500800203009005010300"
+grid2   = "4.....8.5.3..........7......2.....6.....8.4......1.......6.3.7.5..2.....1.4......"
+hard1   = ".....6....59.....82....8....45........3........6..3.54...325..6.................."
+-- from http://norvig.com/top95.txt
+top95_1 = "4.....8.5.3..........7......2.....6.....8.4......1.......6.3.7.5..2.....1.4......"
+top95_2 = "52...6.........7.13...........4..8..6......5...........418.........3..2...87....."
+top95_3 = "6.....8.3.4.7.................5.4.7.3..2.....1.6.......2.....5.....8.6......1...."
 
 exeMain = do
-    putStrLn (show board1)
+    putStrLn (show board)
     putStrLn ("==========")
-    putStrLn (show $ solve board1)
+    putStrLn (show $ solve board)
 
 testMain = do
     allPass <- runTests
