@@ -22,9 +22,14 @@ newtype Board = Board [Field]
 instance Show Board where
   show (Board b) = intercalate "\n" rows
     where
-      rows :: [String]
-      rows = map show (chunksOf boardSize (map render b))
-      render Nothing = "-"
+      rowItems :: [[String]]
+      rowItems = chunksOf boardSize (map render b)
+      injectPipes :: [String] -> String
+      injectPipes s = intercalate "|" $ chunksOf squareSize (concat s)
+      sepRowItems :: [String]
+      sepRowItems = map injectPipes rowItems
+      rows = intercalate ["---+---+---"] $ chunksOf squareSize sepRowItems
+      render Nothing = "."
       render (Just i) = show i
 
 data Pos = Pos Int Int deriving Show
@@ -109,4 +114,8 @@ solve (Board b) = step possVals
         step (Just (p, [])) = Nothing
         step (Just (p, vs)) = listToMaybe $ catMaybes [solve (update (Board b) p v) | v <- vs]
 
-
+trySolve :: Board -> Board
+trySolve (Board b) =
+  case (solve (Board b)) of
+    Nothing -> (Board b)
+    Just sb -> sb
