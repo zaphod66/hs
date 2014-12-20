@@ -58,7 +58,7 @@ prop_field pos @ (Pos r c) =
   where board = map (\i -> Just i) (take (boardSize ^ 2) [0..])
 
 rowVals :: Board -> Pos -> [Int]
-rowVals (Board b) (Pos r c) = catMaybes [field (Board b) (Pos r c') | c' <- take boardSize [0..]]
+rowVals b (Pos r c) = catMaybes [field b (Pos r c') | c' <- take boardSize [0..]]
 
 prop_rowVals pos @ (Pos r _) =
   sort rv == take boardSize [(r * boardSize)..]
@@ -66,7 +66,7 @@ prop_rowVals pos @ (Pos r _) =
         rv = rowVals (Board board) pos
 
 colVals :: Board -> Pos -> [Int]
-colVals (Board b) (Pos r c) = catMaybes [field (Board b) (Pos r' c) | r' <- take boardSize [0..]]
+colVals b (Pos r c) = catMaybes [field b (Pos r' c) | r' <- take boardSize [0..]]
 
 prop_colVals pos @ (Pos _ c) =
   sort cv == [v * boardSize + c | v <- take boardSize [0..]]
@@ -74,8 +74,8 @@ prop_colVals pos @ (Pos _ c) =
         cv = colVals (Board board) pos
 
 squareVals :: Board -> Pos -> [Int]
-squareVals (Board b) (Pos r c) =
-  catMaybes [field (Board b) (Pos r' c') | r' <- take squareSize [(off r)..]
+squareVals b (Pos r c) =
+  catMaybes [field b (Pos r' c') | r' <- take squareSize [(off r)..]
                                  , c' <- take squareSize [(off c)..]]
   where off x = x `div` squareSize * squareSize
 
@@ -84,22 +84,22 @@ squareVals (Board b) (Pos r c) =
 -- TODO capture overspecified fields (possible vals empty)
 
 possibleVals :: Board -> Pos -> [Int]
-possibleVals (Board b) pos = [1..boardSize] \\ concat [ext (Board b) pos | ext <- [rowVals, colVals, squareVals]]
+possibleVals b pos = [1..boardSize] \\ concat [ext b pos | ext <- [rowVals, colVals, squareVals]]
 
 seqSnd :: (a, Maybe b) -> Maybe (a, b)
 seqSnd (a, Nothing) = Nothing
 seqSnd (a, Just b) = Just (a, b)
 
 allPossibleVals :: Board -> [(Pos, [Int])]
-allPossibleVals (Board b) = catMaybes [seqSnd (pos, possVals (Board b) pos) | pos <- positions]
+allPossibleVals b = catMaybes [seqSnd (pos, possVals b pos) | pos <- positions]
   where positions = [Pos r c | r <- take boardSize [0..], c <- take boardSize [0..]]
         possVals :: Board -> Pos -> Maybe [Int]
-        possVals (Board b) pos = case (field (Board b) pos) of
+        possVals b pos = case (field b pos) of
                            Just _ -> Nothing
-                           Nothing -> Just $ possibleVals (Board b) pos
+                           Nothing -> Just $ possibleVals b pos
 
 bestPossibleVals :: Board -> Maybe (Pos, [Int])
-bestPossibleVals (Board b) = listToMaybe $ sortByLength (allPossibleVals (Board b))
+bestPossibleVals b = listToMaybe $ sortByLength (allPossibleVals b)
   where sortByLength = sortBy (\ (_, avs) (_, bvs) -> compare (length avs) (length bvs))
 
 update :: Board -> Pos -> Int -> Board
@@ -107,15 +107,15 @@ update (Board b) p v = Board $ (take i b) ++ [Just v] ++ (drop (i + 1) b)
   where i = posToIdx p
 
 solve :: Board -> Maybe Board
-solve (Board b) = step possVals
-  where possVals = bestPossibleVals (Board b)
+solve b = step possVals
+  where possVals = bestPossibleVals b
         step :: Maybe (Pos, [Int]) -> Maybe Board
-        step Nothing = Just $ Board b
+        step Nothing = Just b
         step (Just (p, [])) = Nothing
-        step (Just (p, vs)) = listToMaybe $ catMaybes [solve (update (Board b) p v) | v <- vs]
+        step (Just (p, vs)) = listToMaybe $ catMaybes [solve (update b p v) | v <- vs]
 
 trySolve :: Board -> Board
-trySolve (Board b) =
-  case (solve (Board b)) of
-    Nothing -> (Board b)
+trySolve b =
+  case (solve b) of
+    Nothing -> b
     Just sb -> sb
