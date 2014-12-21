@@ -7,14 +7,14 @@ license-file: ""
 data-dir: ""
 
 executable Sudoku
-    build-depends: QuickCheck -any, base -any, split -any
+    build-depends: QuickCheck -any, base -any, split -any, containers -any
     main-is: Main.hs
     buildable: True
     hs-source-dirs: src
     other-modules: Sudoku
 
 test-suite test-Sudoku
-    build-depends: QuickCheck -any, base -any, split -any
+    build-depends: QuickCheck -any, base -any, split -any, containers -any
     type: exitcode-stdio-1.0
     main-is: Main.hs
     buildable: True

@@ -22,13 +22,14 @@ import Data.List (stripPrefix)
 import System.Exit (exitFailure)
 import Test.QuickCheck.All (quickCheckAll)
 import Data.Char
+import qualified Data.Sequence as DS
 
 import Sudoku
 
 board = intsToBoard grid0
 
 toBoard :: (a -> Field) -> [a] -> Board
-toBoard f cs = Board $ map f cs
+toBoard f cs = Board $ DS.fromList $ map f cs
 
 intsToBoard :: [Int] -> Board
 intsToBoard  b = toBoard f b
@@ -70,10 +71,12 @@ top95_3 = "6.....8.3.4.7.................5.4.7.3..2.....1.6.......2.....5.....8.
 hardest1 = "85...24..72......9..4.........1.7..23.5...9...4...........8..7..17..........36.4."
 hardest2 = "..53.....8......2..7..1.5..4....53...1..7...6..32...8..6.5....9..4....3......97.."
 
-exeMain = do
-    putStrLn $ show board
+exeMain =
+  do
+    putStrLn $ show b
     putStrLn ("===========")
-    putStrLn $ show $ trySolve board
+    putStrLn $ show $ trySolve b
+  where b = charsToBoard hard1
 
 testMain = do
     allPass <- runTests

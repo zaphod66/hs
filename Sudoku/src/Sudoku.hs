@@ -8,6 +8,8 @@ import Test.QuickCheck.Gen
 import Data.Maybe
 import Data.List
 import Data.List.Split
+import qualified Data.Sequence as DS
+import Data.Foldable (toList)
 
 runTests = $quickCheckAll
 
@@ -16,14 +18,13 @@ squareSize = 3
 
 type Field = Maybe Int
 
--- TODO convert to Data.Sequence
-newtype Board = Board [Field]
+newtype Board = Board (DS.Seq Field)
 
 instance Show Board where
   show (Board b) = intercalate "\n" rows
     where
       rowItems :: [[String]]
-      rowItems = chunksOf boardSize (map render b)
+      rowItems = chunksOf boardSize (map render (toList b))
       injectPipes :: [String] -> String
       injectPipes s = intercalate "|" $ chunksOf squareSize (concat s)
       sepRowItems :: [String]
@@ -51,18 +52,18 @@ posToIdx :: Pos -> Int
 posToIdx (Pos r c) = r * boardSize + c
 
 field :: Board -> Pos -> Field
-field (Board b) p = b !! (posToIdx p)
+field (Board b) p = DS.index b (posToIdx p)
 
 prop_field pos @ (Pos r c) =
   field (Board board) pos == (Just $ r * boardSize + c)
-  where board = map (\i -> Just i) (take (boardSize ^ 2) [0..])
+  where board = DS.fromList $ map (\i -> Just i) (take (boardSize ^ 2) [0..])
 
 rowVals :: Board -> Pos -> [Int]
 rowVals b (Pos r c) = catMaybes [field b (Pos r c') | c' <- take boardSize [0..]]
 
 prop_rowVals pos @ (Pos r _) =
   sort rv == take boardSize [(r * boardSize)..]
-  where board = map (\i -> Just i) (take (boardSize ^ 2) [0..])
+  where board = DS.fromList $ map (\i -> Just i) (take (boardSize ^ 2) [0..])
         rv = rowVals (Board board) pos
 
 colVals :: Board -> Pos -> [Int]
@@ -70,7 +71,7 @@ colVals b (Pos r c) = catMaybes [field b (Pos r' c) | r' <- take boardSize [0..]
 
 prop_colVals pos @ (Pos _ c) =
   sort cv == [v * boardSize + c | v <- take boardSize [0..]]
-  where board = map (\i -> Just i) (take (boardSize ^ 2) [0..])
+  where board = DS.fromList $  map (\i -> Just i) (take (boardSize ^ 2) [0..])
         cv = colVals (Board board) pos
 
 squareVals :: Board -> Pos -> [Int]
@@ -103,7 +104,7 @@ bestPossibleVals b = listToMaybe $ sortByLength (allPossibleVals b)
   where sortByLength = sortBy (\ (_, avs) (_, bvs) -> compare (length avs) (length bvs))
 
 update :: Board -> Pos -> Int -> Board
-update (Board b) p v = Board $ (take i b) ++ [Just v] ++ (drop (i + 1) b)
+update (Board b) p v = Board $ DS.update i (Just v) b
   where i = posToIdx p
 
 solve :: Board -> Maybe Board
